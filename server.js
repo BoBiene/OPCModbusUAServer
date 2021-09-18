@@ -33,8 +33,9 @@ processArgs
     .addOption(new commander.Option('-p, --port <number>', 'opc ua server port number').default(config.get('port')).env('PORT').argParser(parseMyInt))
     .addOption(new commander.Option('-u, --url <path>', 'opc ua server url-path').default(config.get('url')).env('URL_PATH'))
     .addOption(new commander.Option('--modbus-host <host>', 'specify the modbus host address').env('MODBUS_HOST'))
-    .addOption(new commander.Option('--modbus-port <port>', 'specify the modbus tcp port').default('502').env('MODBUS_PORT').argParser(parseMyInt))
-    .addOption(new commander.Option('--modbus-unit-id <unitId>', 'specify the modbus unit id').default('1').env('MODBUS_UNITID').argParser(parseMyInt))
+    .addOption(new commander.Option('--modbus-port <port>', 'specify the modbus tcp port').default(502).env('MODBUS_PORT').argParser(parseMyInt))
+    .addOption(new commander.Option('--modbus-pollrate <pollrate>', 'specify the pollrate in milliseconds').default(1000).env('MODBUS_POLLRATE').argParser(parseMyInt))
+    .addOption(new commander.Option('--modbus-unit-id <unitId>', 'specify the modbus unit id').default(1).env('MODBUS_UNITID').argParser(parseMyInt))
     .addOption(new commander.Option('--modbus-not-onebased', 'disable one based addresses'))
     .addOption(new commander.Option('--modbus-holdingregister [ranges...]', 'specify the modbus holdingregister ranges').default([]).argParser(parseMyRange))
     .addOption(new commander.Option('--modbus-coils [ranges...]', 'specify the modbus coils ranges').default([]).argParser(parseMyRange))
@@ -129,8 +130,9 @@ function create_modbus_variables(server, modbushandler, rootname, register, type
             registerDeviceToUAServer(server, devicesnode, namespace, {
                 "modbushost": options.modbusHost,
                 "modbusport": options.modbusPort,
+                "pollrate" : options.modbusPollrate,
                 "unit": options.modbusUnitId,
-                "onebased": !!!options.modbusNotOnebased,
+                "onebased": !!options.modbusNotOnebased,
                 "deviceaddressspace": [
                     { "type": "holdingregister", "addresses": options.modbusHoldingregister },
                     { "type": "coils", "addresses": options.modbusCoils },

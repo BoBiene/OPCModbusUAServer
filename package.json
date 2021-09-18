@@ -13,6 +13,8 @@
     "config": "^3.3.6",
     "jsmodbus": "~4.0",
     "lodash": "~4.17",
-    "node-opcua": "~2.50"
+    "node-opcua": "~2.50",
+    "net-keepalive" : "~3.0",
+    "node-net-reconnect" :  "~0.2"
   }
 }
