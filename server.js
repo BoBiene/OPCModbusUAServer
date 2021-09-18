@@ -74,13 +74,13 @@ function create_modbus_variables(server, modbushandler, rootname, register, type
     modbushandler.StartPoll(rootname, type, StartAddress, count, device.pollrate);
     const addressSpace = server.engine.addressSpace;
     const namespace = addressSpace.getOwnNamespace();
-
+ 
     for (var i = 0; i < count; i++) {
         //console.log("creating variable: " + (address + count).toString());
         var node = function (register, type, address, i) {
             var servernode = {
                 componentOf: register,
-                browseName: (address + i).toString(),
+                browseName: (address + i).toString().padStart(5, 0),
                 minimumSamplingInterval: device.pollrate,
                 dataType: modbushandler.GetDataTypeString(type),
                 value: {

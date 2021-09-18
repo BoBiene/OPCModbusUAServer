@@ -3,7 +3,7 @@ ENV NODE_ENV=production
 
 # install openssl
 RUN apk update \
-	&& apk add --no-cache openssl\
+	&& apk add --no-cache openssl python3 make g++\
 	&& rm -rf /var/lib/apt/lists/* \
 	&& rm -rf /var/cache/apk/*
 

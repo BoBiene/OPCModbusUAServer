@@ -1,7 +1,8 @@
 `use strict`;
 
+var modbus = require('jsmodbus');
 const opcua = require("node-opcua");
-const Reconnect = require('node-net-reconnect')
+const Reconnect = require('./NetReconnect')
 const net = require('net');
 const { errorCodeToMessage } = require('jsmodbus/dist/codes');
 
@@ -79,16 +80,28 @@ var modbushandler = {
             'host': host,
             'port': port,
             'autoReconnect': true,
-            'retryAlways' : true,
+            'retryAlways': true,
             'retryTime': 1000,
             'timeout': 5000,
             'keepAlive': 5000
         };
-        let recon = new Reconnect( this.socket, options);
+        let recon = new Reconnect(this.socket, options);
         this.socket.connect(options);
 
-        console.log("Created a Modbus device on " + host + ":" + port + " " + unit);
+        console.log("Created a Modbus device on %s:%d %s",host,port,unit);
         this.modbusclient = mclient;
+        let connectionState = false;
+        this.socket.on('error', () => {
+            if (connectionState)
+                console.warn("Lost connection to Modbus device on %s:%d %s",host,port,unit);
+            connectionState = false;
+        });
+        this.socket.on('connect', () => {
+            if (!connectionState) {
+                console.info("Connection established to Modbus device on %s:%d %s",host,port,unit);
+            }
+            connectionState = true;
+        });
     }
 };
 
