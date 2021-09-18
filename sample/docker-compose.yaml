@@ -1,0 +1,20 @@
+opcua-server:
+  container_name: opcua-server
+  image: ghcr.io/bobiene/opcmodbusuaserver
+  ports:
+    - 8080
+  command: >
+    --modbus-host modbus-server 
+    --modbus.port 5020 
+    --modbus-not-onebased 
+    --modbus-holdingregister 0:100
+    --modbus-inputregisters 0:2 3 5:5 426:6 456:6
+modbus-server:
+  container_name: modbus-server
+  image: oitc/modbus-server
+  restart: always
+  command: -f /server_config.json
+  expose:
+    - 5020
+  volumes:
+    - ./modbus-server.json:/server_config.json:ro
