@@ -74,7 +74,7 @@ function create_modbus_variables(server, modbushandler, rootname, register, type
     modbushandler.StartPoll(rootname, type, StartAddress, count, device.pollrate);
     const addressSpace = server.engine.addressSpace;
     const namespace = addressSpace.getOwnNamespace();
- 
+
     for (var i = 0; i < count; i++) {
         //console.log("creating variable: " + (address + count).toString());
         var node = function (register, type, address, i) {
@@ -84,12 +84,20 @@ function create_modbus_variables(server, modbushandler, rootname, register, type
                 minimumSamplingInterval: device.pollrate,
                 dataType: modbushandler.GetDataTypeString(type),
                 value: {
-                    get: function () {
+                    timestamped_get: function () {
                         return modbushandler.ReadValue(rootname + (StartAddress + i).toString());
                     },
-                    set: function (variant) {
-                        modbushandler.WriteValue(type, StartAddress + i, variant);
-                        return opcua.StatusCodes.Good;
+                    timestamped_set: function (dataValue, callback) {
+                        (async function () {
+                            try {
+                                if (await modbushandler.WriteValue(type, StartAddress + i, dataValue.value) == true)
+                                    callback(null, opcua.StatusCodes.Good);
+                                else
+                                    callback(null, opcua.StatusCodes.Bad);
+                            } catch (err) {
+                                callback(err, null);
+                            }
+                        })();
                     }
                 }
             }
@@ -130,7 +138,7 @@ function create_modbus_variables(server, modbushandler, rootname, register, type
             registerDeviceToUAServer(server, devicesnode, namespace, {
                 "modbushost": options.modbusHost,
                 "modbusport": options.modbusPort,
-                "pollrate" : options.modbusPollrate,
+                "pollrate": options.modbusPollrate,
                 "unit": options.modbusUnitId,
                 "onebased": !!options.modbusNotOnebased,
                 "deviceaddressspace": [

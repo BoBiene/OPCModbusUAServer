@@ -43,35 +43,42 @@ var modbushandler = {
     ReadValue: function (name) {
         //console.log("read ", this.ValueMap);
         var val = this.ValueMap[name];
+        let statusCode;
         if (!val) {
-            return opcua.StatusCodes.BadDataUnavailable;
+            statusCode = opcua.StatusCodes.BadDataUnavailable;
         }
-        if (val.q != "good") {
-            return opcua.StatusCodes.BadConnectionRejected;//Bad;
+        if (val?.q != "good") {
+            switch (val?.q) {
+                case "BadNotConnected":
+                    statusCode = opcua.StatusCodes.BadNotConnected;
+                    break;
+                case "BadCommunicationError":
+                default:
+                    statusCode = opcua.StatusCodes.BadCommunicationError;
+                    break;
+
+            }
         }
-        return val.v;
+        return new opcua.DataValue({ "value": val?.v, "statusCode": statusCode, "sourceTimestamp": new Date() });
     },
-    WriteValue: function (type, address, variant) {
-        switch (type) {
-            case "holdingregister":
-                var value = parseInt(variant.value);
-                this.modbusclient.writeSingleRegister(address, value).then(function (resp) {
-
-                    // resp will look like { fc: 6, byteCount: 4, registerAddress: 13, registerValue: 42 } 
-                    console.log("Writing to holding register address: " + resp.registerAddress + " value: ", resp.registerValue);
-
-                }).fail(console.log);
-                break;
-            case "coils":
-                var value = ((variant.value) === 'true');
-                this.modbusclient.writeSingleCoil(address, value).then(function (resp) {
-
-                    // resp will look like { fc: 5, byteCount: 4, outputAddress: 5, outputValue: true } 
-                    console.log("Writing to coil address: " + resp.outputAddress + " value: " + resp.outputValue);
-
-                }).fail(console.log);
-                break;
+    WriteValue: async function (type, address, variant) {
+        try {
+            switch (type) {
+                case "holdingregister": {
+                    var value = parseInt(variant.value);
+                    let resp = await this.modbusclient.writeSingleRegister(address, value);
+                    return true;
+                }
+                case "coils": {
+                    var value = ((variant.value) === 'true');
+                    let resp = await this.modbusclient.writeSingleCoil(address, value);
+                    return true;
+                }
+            }
+        } catch (er) {
+            console.error('unable to write %s', address, er);
         }
+        return false;
     },
     CreateModbusDevice: function (host, port, unit) {
         this.socket = new net.Socket();
@@ -88,17 +95,17 @@ var modbushandler = {
         let recon = new Reconnect(this.socket, options);
         this.socket.connect(options);
 
-        console.log("Created a Modbus device on %s:%d %s",host,port,unit);
+        console.log("Created a Modbus device on %s:%d %s", host, port, unit);
         this.modbusclient = mclient;
         let connectionState = false;
         this.socket.on('error', () => {
             if (connectionState)
-                console.warn("Lost connection to Modbus device on %s:%d %s",host,port,unit);
+                console.warn("Lost connection to Modbus device on %s:%d %s", host, port, unit);
             connectionState = false;
         });
         this.socket.on('connect', () => {
             if (!connectionState) {
-                console.info("Connection established to Modbus device on %s:%d %s",host,port,unit);
+                console.info("Connection established to Modbus device on %s:%d %s", host, port, unit);
             }
             connectionState = true;
         });
