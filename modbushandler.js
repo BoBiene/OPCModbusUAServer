@@ -73,15 +73,14 @@ var modbushandler = {
     },
     CreateModbusDevice: function (host, port, unit) {
         this.socket = new net.Socket();
-        var mclient = new modbus.client.TCP(this.socket);
+        var mclient = new modbus.client.TCP(this.socket, unit);
         const options = {
             'host': host,
             'port': port,
             'autoReconnect': true,
             'reconnectTimeout': 1000,
             'timeout': 5000,
-            'keepAlive': 5000,
-            'unitId': unit
+            'keepAlive': 5000
         };
         this.socket.connect(options);
 

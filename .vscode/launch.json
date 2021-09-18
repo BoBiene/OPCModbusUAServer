@@ -3,6 +3,7 @@
         {
             "name": "Node.js Launch",
             "program": "${workspaceFolder}/server.js",
+            "args": ["-p", "8081", "--modbus-holdingregister", "1:5", "10", "50:20", "--modbus-holdingregister","100:5", "--modbus-host", "localhost"],
             "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"

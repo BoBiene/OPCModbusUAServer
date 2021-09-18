@@ -14,3 +14,111 @@ Main files in the project:
  - modbushandler.js => Contains the Modbus communication code needed to provide Modbus actions like reads and writes for the OPC server
  - config.json => Configuration file for the application, this is how we get to know the TCP addresses of the Modbus devices, the registers we'd like to read...etc
 
+# Docker container
+
+## sample modbus device using command line arguments
+### usage 
+````
+Usage: server [options]
+
+Options:
+  -p, --port <number>                   opc ua server port number (default: 8080, env: PORT)
+  -u, --url <path>                      opc ua server url-path (default: "/ModbusServer", env: URL_PATH)
+  --modbus-host <host>                  specify the modbus host address (env: MODBUS_HOST)
+  --modbus-port <port>                  specify the modbus tcp port (default: "502", env: MODBUS_PORT)
+  --modbus-unit-id <unitId>             specify the modbus unit id (default: "1", env: MODBUS_UNITID)
+  --modbus-not-onebased                 disable one based addresses
+  --modbus-holdingregister [ranges...]  specify the modbus holdingregister ranges (default: [])
+  --modbus-coils [ranges...]            specify the modbus coils ranges (default: [])
+  --modbus-discreteinputs [ranges...]   specify the modbus discreteinputs ranges (default: [])
+  --modbus-inputregisters [ranges...]   specify the modbus inputregisters ranges (default: [])
+  -h, --help                            display help for command
+````
+
+````bash
+docker run -p 8080:8080 ghcr.io/bobiene/opcmodbusuaserver:latest --modbus-host localhost --modbus-holdingregister 1:5 10 50:20
+````
+
+````bash
+docker run -p 8080:8080 ghcr.io/bobiene/opcmodbusuaserver:latest --modbus-host localhost --modbus-holdingregister 1:5 10 --modbus-holdingregister 50:20
+````
+
+````bash
+docker run -p 8080:8080 ghcr.io/bobiene/opcmodbusuaserver:latest --modbus-host localhost --modbus.port 503 --modbus-holdingregister 1:5 10 --modbus-discreteinputs 50:20
+````
+
+## sample modbus device connection using config file
+
+
+````bash
+docker run -p 8080:8080 -v ./local.json:/usr/src/app/config/local.json ghcr.io/bobiene/opcmodbusuaserver:latest
+````
+
+local.json:
+````json
+{
+    "modbusdevices": [
+        {
+            "modbushost": "localhost",
+            "modbusport": 8880,
+            "unit": 2,
+            "pollrate":500,
+            "onebased":true,
+            "deviceaddressspace": [
+                {
+                    "type": "holdingregister",
+                    "addresses": [
+                        {
+                            "address": 1,
+                            "count": 4
+                        },
+                        {
+                            "address": 10,
+                            "count": 8
+                        }
+                    ]
+                },
+                {
+                    "type": "coils",
+                    "addresses": [
+                        {
+                            "address": 1,
+                            "count": 4
+                        },
+                        {
+                            "address": 10,
+                            "count": 8
+                        }
+                    ]
+                },
+                {
+                    "type": "discreteinputs",
+                    "addresses": [
+                        {
+                            "address": 1,
+                            "count": 4
+                        },
+                        {
+                            "address": 10,
+                            "count": 8
+                        }
+                    ]
+                },
+                {
+                    "type": "inputregisters",
+                    "addresses": [
+                        {
+                            "address": 1,
+                            "count": 4
+                        },
+                        {
+                            "address": 10,
+                            "count": 8
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+````
