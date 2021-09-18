@@ -1,5 +1,5 @@
 {
-    "url": "ModbusServer",
+    "url": "/ModbusServer",
     "port": 8080,
     "modbusdevices": [
         {

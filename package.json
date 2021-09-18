@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "lodash": "^4.17.4",
-    "node-opcua": "0.0.61"
+    "lodash": "~4.17",
+    "node-opcua": "~2.50",
+    "jsmodbus": "~4.0"
   }
 }

@@ -2,10 +2,11 @@
 
 var modbus = require('jsmodbus');
 var opcua = require("node-opcua");
-
+const net = require('net')
 
 var modbushandler = {
     modbusclient: {},
+    socket: {},
     ValueMap: {},
     GetDataTypeString: function (type) {
         switch (type) {
@@ -28,7 +29,7 @@ var modbushandler = {
         }
     },
     StartPoll: function (name, type, address, count, pollrate) {
-        this.modbusclient.on('error', () => {
+        this.socket.on('error', () => {
             for (var property in this.ValueMap) {
                 if (this.ValueMap.hasOwnProperty(property)) {
                     this.ValueMap[property].q = "bad"
@@ -43,7 +44,7 @@ var modbushandler = {
         if (!val) {
             return opcua.StatusCodes.BadDataUnavailable;
         }
-        if(val.q!="good"){
+        if (val.q != "good") {
             return opcua.StatusCodes.BadConnectionRejected;//Bad;
         }
         return val.v;
@@ -71,85 +72,116 @@ var modbushandler = {
         }
     },
     CreateModbusDevice: function (host, port, unit) {
-        var mclient = modbus.client.tcp.complete({
+        this.socket = new net.Socket();
+        var mclient = new modbus.client.TCP(this.socket);
+        const options = {
             'host': host,
             'port': port,
             'autoReconnect': true,
             'reconnectTimeout': 1000,
             'timeout': 5000,
+            'keepAlive': 5000,
             'unitId': unit
-        });
-        mclient.connect();
+        };
+        this.socket.connect(options);
+
         console.log("Created a Modbus device on " + host + ":" + port + " " + unit);
         this.modbusclient = mclient;
     }
 };
 
-function polldata(client, ValueMap, rootname, type, address, count) {
+function toOPCType(type) {
     switch (type) {
         case "holdingregister":
-            client.readHoldingRegisters(address, count).then(function (resp) {
-                // resp will look like { fc: 3, byteCount: 20, register: [ values 0 - 10 ], payload: <Buffer> }
-               // console.log(resp);
-                resp.register.forEach(function (value, i) {
-                    var fulladdress = (address + i).toString();
-                    ValueMap[rootname + fulladdress] = {
-                        v: new opcua.Variant({ dataType: opcua.DataType.Int32, value: value }),
-                        q: "good"
-                    };
-                });
-            });//.fail(console.log);
-            /*
-                .catch((rootname, fulladdress, count) => {
-                    for (let i = 0; i < count; i++) {
-                        ValueMap[rootname + (address + i).toString()] = null;
-                    }
-                })
-                  */
-             
-              
-            break;
         case "inputregisters":
-            client.readInputRegisters(address, count).then(function (resp) {
-                // resp will look like { fc: 3, byteCount: 20, register: [ values 0 - 10 ], payload: <Buffer> }
-                //console.log(resp);
-                resp.register.forEach(function (value, i) {
-                    var fulladdress = (address + i).toString();
-                     ValueMap[rootname + fulladdress] = {
-                        v: new opcua.Variant({ dataType: opcua.DataType.Int32, value: value }),
-                        q: "good"
-                    };
-                });
-            });//.fail(console.log);
-            break;
+            return opcua.DataType.Int32;
         case "coils":
-            client.readCoils(address, count).then(function (resp) {
-                // resp will look like { fc: 3, byteCount: 20, register: [ values 0 - 10 ], payload: <Buffer> }
-                //console.log(resp);
-
-                resp.coils.forEach(function (value, i) {
-                    var fulladdress = (address + i).toString();
-                     ValueMap[rootname + fulladdress] = {
-                        v: new opcua.Variant({ dataType: opcua.DataType.Boolean, value: value }),
-                        q: "good"
-                    };
-                });
-            });//.fail(console.log);
-            break;
         case "discreteinputs":
-            client.readDiscreteInputs(address, count).then(function (resp) {
-                // resp will look like { fc: 3, byteCount: 20, register: [ values 0 - 10 ], payload: <Buffer> }
-                //console.log(resp);
-                resp.coils.forEach(function (value, i) {
-                    var fulladdress = (address + i).toString();
-                      ValueMap[rootname + fulladdress] = {
-                        v: new opcua.Variant({ dataType: opcua.DataType.Boolean, value: value }),
-                        q: "good"
-                    };
-                });
-            });//.fail(console.log);
-            break;
+            return opcua.DataType.Boolean;
     }
 }
 
+function polldata(client, ValueMap, rootname, type, address, count) {
+    if (this.socket?.readState != 'open') {
+        for (var i = 0; i < count; ++i) {
+            var fulladdress = (address + i).toString();
+            ValueMap[rootname + fulladdress] = {
+                v: new opcua.Variant({ dataType: opcua.DataType.Null}),
+                q: "BadNotConnected"
+            };
+        }
+    } else {
+        try {
+            switch (type) {
+                case "holdingregister":
+                    client.readHoldingRegisters(address, count).then(function (resp) {
+                        // resp will look like { fc: 3, byteCount: 20, register: [ values 0 - 10 ], payload: <Buffer> }
+                        // console.log(resp);
+                        resp.register.forEach(function (value, i) {
+                            var fulladdress = (address + i).toString();
+                            ValueMap[rootname + fulladdress] = {
+                                v: new opcua.Variant({ dataType: opcua.DataType.Int32, value: value }),
+                                q: "good"
+                            };
+                        });
+                    });
+
+                    break;
+                case "inputregisters":
+
+                    client.readInputRegisters(address, count).then(function (resp) {
+                        // resp will look like { fc: 3, byteCount: 20, register: [ values 0 - 10 ], payload: <Buffer> }
+                        //console.log(resp);
+                        resp.register.forEach(function (value, i) {
+                            var fulladdress = (address + i).toString();
+                            ValueMap[rootname + fulladdress] = {
+                                v: new opcua.Variant({ dataType: opcua.DataType.Int32, value: value }),
+                                q: "good"
+                            };
+                        });
+                    });
+
+                    break;
+                case "coils":
+                    client.readCoils(address, count).then(function (resp) {
+                        // resp will look like { fc: 3, byteCount: 20, register: [ values 0 - 10 ], payload: <Buffer> }
+                        //console.log(resp);
+
+                        resp.coils.forEach(function (value, i) {
+                            var fulladdress = (address + i).toString();
+                            ValueMap[rootname + fulladdress] = {
+                                v: new opcua.Variant({ dataType: opcua.DataType.Boolean, value: value }),
+                                q: "good"
+                            };
+                        });
+                    });//.fail(console.log);
+                    break;
+                case "discreteinputs":
+                    client.readDiscreteInputs(address, count).then(function (resp) {
+                        // resp will look like { fc: 3, byteCount: 20, register: [ values 0 - 10 ], payload: <Buffer> }
+                        //console.log(resp);
+                        resp.coils.forEach(function (value, i) {
+                            var fulladdress = (address + i).toString();
+                            ValueMap[rootname + fulladdress] = {
+                                v: new opcua.Variant({ dataType: opcua.DataType.Boolean, value: value }),
+                                q: "good"
+                            };
+                        });
+                    });//.fail(console.log);
+                    break;
+            }
+
+        } catch (err) {
+            for (var i = 0; i < count; ++i) {
+                var fulladdress = (address + i).toString();
+                ValueMap[rootname + fulladdress] = {
+                    v: new opcua.Variant({ dataType: opcua.DataType.Null }),
+                    q: "BadCommunicationError"
+                };
+            }
+            console.error("Unable to poll items: " + err);
+        }
+
+    }
+}
 module.exports = modbushandler;
