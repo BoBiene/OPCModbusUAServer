@@ -1,6 +1,6 @@
 # OPCModbusUAServer
 
-![An OPC server](https://github.com/minaandrawos/OPCModbusUAServer/blob/master/opc%20basics%20cropped.png)
+![An OPC server](./opc%20basics%20cropped.png)
 
 An open source OPC UA server for Modbus TCP devices. The project makes use of the powerful open source NodeOPCUA (http://node-opcua.github.io/) package, combined with the jsmodbus (https://github.com/Cloud-Automation/node-modbus) package to build the OPC server.
 
@@ -122,3 +122,14 @@ local.json:
     ]
 }
 ````
+
+# Docker compose sample
+
+````bash
+git clone https://github.com/BoBiene/OPCModbusUAServer.git
+cd sample
+docker-compose up
+````
+
+use ``opc.tcp://localhost:8080/ModbusServer`` to connect to the Modbus OPC UA Server:
+![image](https://user-images.githubusercontent.com/23037659/133920479-1df8e2e6-b9b6-428c-9310-e049fee46f46.png)
