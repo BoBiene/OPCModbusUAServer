@@ -42,9 +42,9 @@ processArgs
     .addOption(new commander.Option('--modbus-discreteinputs [ranges...]', 'specify the modbus discreteinputs ranges').default([]).argParser(parseMyRange))
     .addOption(new commander.Option('--modbus-inputregisters [ranges...]', 'specify the modbus inputregisters ranges').default([]).argParser(parseMyRange))
 
-function registerDeviceToUAServer(server, devicesnode, namespace, device) {
+function registerDeviceToUAServer(server, devicesnode, namespace, device, deviceNodeName) {
     modbusHandler.CreateModbusDevice(device.modbushost, device.modbusport ?? 502, device.unit ?? 1);
-    var dnodefname = device.modbushost + ":" + device.modbusport + " unit: " + device.unit;
+    var dnodefname = deviceNodeName ?? device.modbushost + ":" + device.modbusport + " unit: " + device.unit;
     console.log("creating folder: " + dnodefname)
     var dnode = namespace.addFolder(
         devicesnode, { browseName: dnodefname }
@@ -147,7 +147,7 @@ function create_modbus_variables(server, modbushandler, rootname, register, type
                     { "type": "discreteinputs", "addresses": options.modbusDiscreteinputs },
                     { "type": "inputregisters", "addresses": options.modbusInputregisters },
                 ]
-            });
+            },"unit");
         }
 
         // we can now start the server
