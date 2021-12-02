@@ -165,16 +165,6 @@ function create_modbus_variables(server, modbushandler, rootname, register, type
 
         });
 
-        // server.initialize(
-        //     function () {
-        //         console.log("OPC UA Server initialized");
-        //         construct_address_space();
-        //         server.start(function () {
-        //             console.log("Server is now listening...");
-        //         });
-        //     }
-        // );
-
     } catch (err) {
         console.log(err);
         process.exit(-1);
