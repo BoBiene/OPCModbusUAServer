@@ -1,0 +1,66 @@
+{
+    "url": "/ModbusServer",
+    "port": 8080,
+    "modbusdevices": [
+        {
+            "name"      : "server1",
+            "modbushost": "localhost",
+            "modbusport": 5020,
+            "pollrate":500,
+            "onebased":false,
+            "deviceaddressspace": [
+                {
+                    "type": "holdingregister",
+                    "addresses": [
+                        {
+                            "address": 1,
+                            "count": 2
+                        },
+                        {
+                            "address": 3,
+                            "count" : 1
+                        },
+                        {
+                            "address": 426,
+                            "count": 6
+                        },
+                        {
+                            "address": 456,
+                            "count": 6
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name"      : "server2",
+            "modbushost": "localhost",
+            "modbusport": 5020,
+            "pollrate":500,
+            "onebased":false,
+            "deviceaddressspace": [
+                {
+                    "type": "holdingregister",
+                    "addresses": [
+                        {
+                            "address": 1,
+                            "count": 2
+                        },
+                        {
+                            "address": 3,
+                            "count" : 1
+                        },
+                        {
+                            "address": 426,
+                            "count": 6
+                        },
+                        {
+                            "address": 456,
+                            "count": 6
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

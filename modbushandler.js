@@ -6,81 +6,11 @@ const Reconnect = require('./NetReconnect')
 const net = require('net');
 const { errorCodeToMessage } = require('jsmodbus/dist/codes');
 
-var modbushandler = {
-    modbusclient: {},
-    socket: {},
-    ValueMap: {},
-    GetDataTypeString: function (type) {
-        switch (type) {
-            case "holdingregister":
-            case "inputregisters":
-                return "Int32";
-            case "coils":
-            case "discreteinputs":
-                return "Boolean";
-        }
-    },
-    GetDataTypeVarint: function (type) {
-        switch (type) {
-            case "holdingregister":
-            case "inputregisters":
-                return opcua.DataType.Int32;
-            case "coils":
-            case "discreteinputs":
-                return opcua.DataType.Int16.Boolean;
-        }
-    },
-    StartPoll: function (name, type, address, count, pollrate) {
-        this.socket.on('error', () => {
-            for (var property in this.ValueMap) {
-                if (this.ValueMap.hasOwnProperty(property)) {
-                    this.ValueMap[property].q = "bad"
-                }
-            }
-        });
-        setInterval(polldata.bind(null, this.socket, this.modbusclient, this.ValueMap, name, type, address, count), pollrate);
-    },
-    ReadValue: function (name) {
-        //console.log("read ", this.ValueMap);
-        var val = this.ValueMap[name];
-        let statusCode;
-        if (!val) {
-            statusCode = opcua.StatusCodes.BadDataUnavailable;
-        }
-        if (val?.q != "good") {
-            switch (val?.q) {
-                case "BadNotConnected":
-                    statusCode = opcua.StatusCodes.BadNotConnected;
-                    break;
-                case "BadCommunicationError":
-                default:
-                    statusCode = opcua.StatusCodes.BadCommunicationError;
-                    break;
-
-            }
-        }
-        return new opcua.DataValue({ "value": val?.v, "statusCode": statusCode, "sourceTimestamp": new Date() });
-    },
-    WriteValue: async function (type, address, variant) {
-        try {
-            switch (type) {
-                case "holdingregister": {
-                    var value = parseInt(variant.value);
-                    let resp = await this.modbusclient.writeSingleRegister(address, value);
-                    return true;
-                }
-                case "coils": {
-                    var value = ((variant.value) === 'true');
-                    let resp = await this.modbusclient.writeSingleCoil(address, value);
-                    return true;
-                }
-            }
-        } catch (er) {
-            console.error('unable to write %s', address, er);
-        }
-        return false;
-    },
-    CreateModbusDevice: function (host, port, unit) {
+class ModbusHandler {
+    constructor(host, port, unit) {
+        this.modbusclient = {};
+        this.socket = {};
+        this.ValueMap = {};
         this.socket = new net.Socket();
         var mclient = new modbus.client.TCP(this.socket, unit);
         const options = {
@@ -109,6 +39,78 @@ var modbushandler = {
             }
             connectionState = true;
         });
+    }
+
+
+    GetDataTypeString(type) {
+        switch (type) {
+            case "holdingregister":
+            case "inputregisters":
+                return "Int32";
+            case "coils":
+            case "discreteinputs":
+                return "Boolean";
+        }
+    }
+    GetDataTypeVarint(type) {
+        switch (type) {
+            case "holdingregister":
+            case "inputregisters":
+                return opcua.DataType.Int32;
+            case "coils":
+            case "discreteinputs":
+                return opcua.DataType.Int16.Boolean;
+        }
+    }
+    StartPoll(name, type, address, count, pollrate) {
+        this.socket.on('error', () => {
+            for (var property in this.ValueMap) {
+                if (this.ValueMap.hasOwnProperty(property)) {
+                    this.ValueMap[property].q = "bad"
+                }
+            }
+        });
+        setInterval(polldata.bind(null, this.socket, this.modbusclient, this.ValueMap, name, type, address, count), pollrate);
+    }
+    ReadValue(name) {
+        //console.log("read ", this.ValueMap);
+        var val = this.ValueMap[name];
+        let statusCode;
+        if (!val) {
+            statusCode = opcua.StatusCodes.BadDataUnavailable;
+        }
+        if (val?.q != "good") {
+            switch (val?.q) {
+                case "BadNotConnected":
+                    statusCode = opcua.StatusCodes.BadNotConnected;
+                    break;
+                case "BadCommunicationError":
+                default:
+                    statusCode = opcua.StatusCodes.BadCommunicationError;
+                    break;
+
+            }
+        }
+        return new opcua.DataValue({ "value": val?.v, "statusCode": statusCode, "sourceTimestamp": new Date() });
+    }
+    async WriteValue(type, address, variant) {
+        try {
+            switch (type) {
+                case "holdingregister": {
+                    var value = parseInt(variant.value);
+                    let resp = await this.modbusclient.writeSingleRegister(address, value);
+                    return true;
+                }
+                case "coils": {
+                    var value = ((variant.value) === 'true');
+                    let resp = await this.modbusclient.writeSingleCoil(address, value);
+                    return true;
+                }
+            }
+        } catch (er) {
+            console.error('unable to write %s', address, er);
+        }
+        return false;
     }
 };
 
@@ -180,4 +182,4 @@ async function polldata(socket, client, ValueMap, rootname, type, address, count
         console.error("Unable to poll items: ", err);
     }
 }
-module.exports = modbushandler;
+module.exports = ModbusHandler;

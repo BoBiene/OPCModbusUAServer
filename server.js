@@ -3,7 +3,7 @@
 const commander = require('commander');
 const opcua = require("node-opcua");
 const config = require('config');
-const modbusHandler = require("./modbushandler");
+const ModbusHandler = require("./modbushandler");
 const { add } = require('lodash');
 
 const processArgs = new commander.Command();
@@ -43,8 +43,8 @@ processArgs
     .addOption(new commander.Option('--modbus-inputregisters [ranges...]', 'specify the modbus inputregisters ranges').default([]).argParser(parseMyRange))
 
 function registerDeviceToUAServer(server, devicesnode, namespace, device, deviceNodeName) {
-    modbusHandler.CreateModbusDevice(device.modbushost, device.modbusport ?? 502, device.unit ?? 1);
-    var dnodefname = deviceNodeName ?? device.modbushost + ":" + device.modbusport + " unit: " + device.unit;
+    var modbusHandler = new ModbusHandler(device.modbushost, device.modbusport ?? 502, device.unit ?? 1);
+    var dnodefname = deviceNodeName ?? (device.name ?? device.modbushost + ":" + device.modbusport + " unit: " + device.unit);
     console.log("creating folder: " + dnodefname)
     var dnode = namespace.addFolder(
         devicesnode, { browseName: dnodefname }

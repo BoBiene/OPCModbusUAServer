@@ -11,6 +11,19 @@
             "type": "pwa-node"
         },
         {
+            "name": "Node.js Launch ConfigFile",
+            "program": "${workspaceFolder}/server.js",
+            "env": {
+                "NODE_CONFIG_DIR": "${workspaceFolder}/sample/ua-server-config/"
+            },
+            //"args": ["-p", "8080","--modbus-not-onebased","--modbus-host", "localhost","--modbus-port", "5020", "--modbus-holdingregister", " 0:2","3","5:5","426:6","456:6"],
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
             "name": "Docker Node.js Launch",
             "type": "docker",
             "request": "launch",
